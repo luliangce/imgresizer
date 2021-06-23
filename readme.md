@@ -8,6 +8,7 @@
 
 clone and run 
 ```shell
+$ go get
 $ go install bin/imgresizer.go
 ```
 

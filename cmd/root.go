@@ -18,7 +18,9 @@ package cmd
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
+	"runtime"
 
 	"github.com/luliangce/imgresizer"
 	"github.com/spf13/cobra"
@@ -47,7 +49,16 @@ var rootCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
+		if runtime.GOOS == "windows" {
+			//windows glob compatible
+			m, err := filepath.Glob(args[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			args = m
+		}
 		imgs := findImg(args...)
+
 		err := os.MkdirAll(dstDir, os.ModePerm)
 		if err != nil && !os.IsExist(err) {
 			log.Fatal(err)
