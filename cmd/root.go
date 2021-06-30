@@ -50,6 +50,22 @@ func findImg(files ...string) []string {
 	return imgs
 }
 
+func stat(done chan string) {
+	go func() {
+		startTime := time.Now()
+		finishCount := 0
+		for range done {
+			finishCount++
+			if finishCount%10 == 0 && finishCount > 0 {
+				log.Printf("%d images resized in %v,%.2f/s",
+					finishCount,
+					time.Since(startTime),
+					float64(finishCount)/time.Since(startTime).Seconds())
+			}
+		}
+	}()
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "imgresizer img1 [img2] [img3]",
 	Short: "将输入图片压缩为指定尺寸比例的jpg",
@@ -87,22 +103,11 @@ var rootCmd = &cobra.Command{
 		if err != nil && !os.IsExist(err) {
 			log.Fatal(err)
 		}
-		startTime := time.Now()
+
 		wg := new(sync.WaitGroup)
 
 		done := make(chan string, len(imgs))
-		go func() {
-			finishCount := 0
-			for range done {
-				finishCount++
-				if finishCount%10 == 0 && finishCount > 0 {
-					log.Printf("%d images resized in %v,%.2f/s",
-						finishCount,
-						time.Since(startTime),
-						float64(finishCount)/time.Since(startTime).Seconds())
-				}
-			}
-		}()
+		stat(done) // print process info
 		sem := semaphore.NewWeighted(10)
 		handle := func(img string) {
 			err = imgresizer.Resize(img, dstDir, quality, ratio, interpolator)
